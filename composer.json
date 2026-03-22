@@ -15,7 +15,7 @@
     "ext-pdo": "*",
     "ext-json": "*",
     "laravel/framework": "^10.0",
-    "laravel/tinker": "^2.8",
+    "laravel/tinker": "^3.0",
     "tymon/jwt-auth": "^2.0",
     "spatie/laravel-permission": "^6.0",
     "spatie/laravel-activitylog": "^4.0",
