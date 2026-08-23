@@ -17,7 +17,6 @@ Route::get('/health', [HealthController::class, 'health']);
 Route::get('/ready', [HealthController::class, 'ready']);
 Route::get('/version', [HealthController::class, 'version']);
 
-// Public web intake. Rate limited and does not accept any commercial price from the client.
 Route::post('/public/inquiries', [BookingInquiriesController::class, 'store'])->middleware('throttle:8,1');
 
 Route::prefix('auth')->group(function () {
@@ -26,11 +25,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->middleware(['jwt.auth']);
     Route::post('/refresh', [AuthController::class, 'refresh'])->middleware(['jwt.refresh']);
     Route::get('/me', [AuthController::class, 'me'])->middleware(['jwt.auth']);
+    Route::post('/password/change', [AuthController::class, 'changePassword'])->middleware(['jwt.auth','throttle:6,1']);
     Route::post('/mfa/enable', [AuthController::class, 'mfaEnable'])->middleware(['jwt.auth']);
     Route::post('/mfa/verify', [AuthController::class, 'mfaVerify'])->middleware(['jwt.auth','throttle:10,1']);
 });
 
-Route::post('/admin/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/admin/auth/login', [AuthController::class, 'adminLogin'])->middleware('throttle:10,1');
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/flights/search', [FlightsController::class, 'search']);
@@ -65,7 +65,6 @@ Route::prefix('admin')->middleware(['jwt.auth','role:admin'])->group(function ()
     Route::get('/users', [AdminUsersController::class, 'index']);
     Route::post('/users', [AdminUsersController::class, 'create']);
     Route::get('/audit', [AdminAuditController::class, 'index']);
-
     Route::get('/inquiries', [BookingInquiriesController::class, 'index']);
     Route::get('/inquiries/{id}', [BookingInquiriesController::class, 'show']);
     Route::post('/inquiries/{id}/quote', [BookingInquiriesController::class, 'quote']);
