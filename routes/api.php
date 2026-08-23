@@ -7,6 +7,7 @@ use App\Http\Controllers\RequestsController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\AgenciesController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TravelProvidersController;
 use App\Http\Controllers\Admin\UsersController as AdminUsersController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\HealthController;
@@ -36,10 +37,14 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/flights/routes', [FlightsController::class, 'routes']);
     Route::post('/flights/ticket/upload', [FlightsController::class, 'ticketUpload'])->middleware('role:admin');
 
+    // Unified booking requests: flight / hotel / car.
     Route::post('/requests/create', [RequestsController::class, 'create']);
     Route::get('/requests/{id}', [RequestsController::class, 'show']);
+    Route::post('/requests/{id}/quote', [RequestsController::class, 'quote'])->middleware('role:admin');
     Route::post('/requests/{id}/state/change', [RequestsController::class, 'stateChange'])->middleware('role:admin');
     Route::post('/requests/{id}/payment/verify', [RequestsController::class, 'paymentVerify'])->middleware('role:admin');
+
+    Route::get('/travel/providers/status', [TravelProvidersController::class, 'status'])->middleware('role:admin');
 
     Route::get('/pricing/rules', [PricingController::class, 'rules'])->middleware('role:admin');
     Route::post('/pricing/rules/create', [PricingController::class, 'createRule'])->middleware('role:admin');
