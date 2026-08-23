@@ -7,14 +7,17 @@ use App\Http\Controllers\RequestsController;
 use App\Http\Controllers\PricingController;
 use App\Http\Controllers\AgenciesController;
 use App\Http\Controllers\WalletController;
+use App\Http\Controllers\TravelProvidersController;
+use App\Http\Controllers\BookingInquiriesController;
 use App\Http\Controllers\Admin\UsersController as AdminUsersController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\HealthController;
 
-// Health & Readiness Endpoints
 Route::get('/health', [HealthController::class, 'health']);
 Route::get('/ready', [HealthController::class, 'ready']);
 Route::get('/version', [HealthController::class, 'version']);
+
+Route::post('/public/inquiries', [BookingInquiriesController::class, 'store'])->middleware('throttle:8,1');
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
@@ -22,13 +25,12 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->middleware(['jwt.auth']);
     Route::post('/refresh', [AuthController::class, 'refresh'])->middleware(['jwt.refresh']);
     Route::get('/me', [AuthController::class, 'me'])->middleware(['jwt.auth']);
-
+    Route::post('/password/change', [AuthController::class, 'changePassword'])->middleware(['jwt.auth','throttle:6,1']);
     Route::post('/mfa/enable', [AuthController::class, 'mfaEnable'])->middleware(['jwt.auth']);
     Route::post('/mfa/verify', [AuthController::class, 'mfaVerify'])->middleware(['jwt.auth','throttle:10,1']);
 });
 
-// Compatibility alias for existing admin frontend call
-Route::post('/admin/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('/admin/auth/login', [AuthController::class, 'adminLogin'])->middleware('throttle:10,1');
 
 Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/flights/search', [FlightsController::class, 'search']);
@@ -38,8 +40,11 @@ Route::middleware(['jwt.auth'])->group(function () {
 
     Route::post('/requests/create', [RequestsController::class, 'create']);
     Route::get('/requests/{id}', [RequestsController::class, 'show']);
+    Route::post('/requests/{id}/quote', [RequestsController::class, 'quote'])->middleware('role:admin');
     Route::post('/requests/{id}/state/change', [RequestsController::class, 'stateChange'])->middleware('role:admin');
     Route::post('/requests/{id}/payment/verify', [RequestsController::class, 'paymentVerify'])->middleware('role:admin');
+
+    Route::get('/travel/providers/status', [TravelProvidersController::class, 'status'])->middleware('role:admin');
 
     Route::get('/pricing/rules', [PricingController::class, 'rules'])->middleware('role:admin');
     Route::post('/pricing/rules/create', [PricingController::class, 'createRule'])->middleware('role:admin');
@@ -56,9 +61,12 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::get('/loyalty', [WalletController::class, 'loyalty']);
 });
 
-// Admin API group
 Route::prefix('admin')->middleware(['jwt.auth','role:admin'])->group(function () {
     Route::get('/users', [AdminUsersController::class, 'index']);
     Route::post('/users', [AdminUsersController::class, 'create']);
     Route::get('/audit', [AdminAuditController::class, 'index']);
+    Route::get('/inquiries', [BookingInquiriesController::class, 'index']);
+    Route::get('/inquiries/{id}', [BookingInquiriesController::class, 'show']);
+    Route::post('/inquiries/{id}/quote', [BookingInquiriesController::class, 'quote']);
+    Route::post('/inquiries/{id}/status', [BookingInquiriesController::class, 'updateStatus']);
 });
